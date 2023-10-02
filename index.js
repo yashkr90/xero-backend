@@ -31,9 +31,11 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+const CLIENT_URL= process.env.CLIENT_URL
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: CLIENT_URL,
     methods: "GET,POST,PUT,DELETE",
     credentials: true,
   })
@@ -42,8 +44,7 @@ app.use(
 
 
 
-const GOOGLE_CLIENT_ID =process.env.GOOGLE_CLIENT_ID
-  "";
+const GOOGLE_CLIENT_ID =process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
 passport.use(
