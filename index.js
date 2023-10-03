@@ -32,7 +32,7 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-const CLIENT_URL= process.env.CLIENT_URL
+const CLIENT_URL = process.env.CLIENT_URL;
 
 app.use(
   cors({
@@ -42,12 +42,9 @@ app.use(
   })
 );
 
-
-
-
-const GOOGLE_CLIENT_ID =process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const SERVER_URL= process.env.SERVER_URL;
+const SERVER_URL = process.env.SERVER_URL;
 
 passport.use(
   new GoogleStrategy(
@@ -56,77 +53,82 @@ passport.use(
       clientSecret: GOOGLE_CLIENT_SECRET,
       callbackURL: `${SERVER_URL}/auth/google/callback`,
     },
-   async function (accessToken, refreshToken, profile, cb) {
-
+    async function (accessToken, refreshToken, profile, cb) {
       try {
-       const  user =  await User.findOne({ googleId: profile.id });
+        const user = await User.findOne({ googleId: profile.id });
 
-        if(!user){
-         const newuser=new User({
+        if (!user) {
+          const newuser = new User({
             googleId: profile.id,
             firstName: profile.name.givenName,
             lastName: profile.name.familyName,
-      
+
             email: profile.emails[0].value,
-            
           });
 
           await newuser.save();
 
-          console.log("newuser",newuser);
+          console.log("newuser", newuser);
 
-          cb(null,newuser);
+          cb(null, newuser);
         }
 
-        cb(null,user)
-      }
-       catch (error) {
+        cb(null, user);
+      } catch (error) {
         console.log(error);
-        
       }
-     
     }
   )
 );
 
-const GITHUB_CLIENT_ID=process.env.GITHUB_CLIENT_ID;
-const GITHUB_CLIENT_SECRET=process.env.GITHUB_CLIENT_SECRET;
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 
 passport.use(
   new GithubStrategy(
     {
       clientID: GITHUB_CLIENT_ID,
       clientSecret: GITHUB_CLIENT_SECRET,
-      callbackURL: `${SERVER_URL}/auth/google/callback`,
+      callbackURL: `${SERVER_URL}/auth/github/callback`,
+      scope: ["user:email"],
     },
     async function (accessToken, refreshToken, profile, done) {
+      console.log(profile);
+      try {
+        const user = await User.findOne({ githubId: profile.id });
+        const fullName = profile.displayName;
+        const nameParts = fullName.split(" ");
+        let firstName = "";
+        let lastName = "";
+        if (nameParts.length > 1) {
+          firstName = nameParts[0];
+          lastName = nameParts.slice(1).join(" ");
+        } else {
+          firstName = fullName;
+        }
+        console.log("First Name:", firstName);
+        console.log("Last Name:", lastName);
 
-      // try {
-      //   const  user =  await User.findOne({ githubId: profile.id });
- 
-      //    if(!user){
-      //     const newuser=new User({
-      //       githubId: profile.id,
-      //        firstName: profile.name.givenName,
-      //        lastName: profile.name.familyName,
-       
-      //       //  email: profile.emails[0].value,
-             
-      //      });
- 
-      //      await newuser.save();
- 
-      //      console.log("newuser",newuser);
- 
-      //      cb(null,newuser);
-      //    }
- 
-      //    cb(null,user)
-      //  }
-      //   catch (error) {
-      //    console.log(error);
-         
-      //  }
+        if (!user) {
+          const newuser = new User({
+            githubId: profile.id,
+            firstName: profile.name.givenName,
+            lastName: profile.name.familyName,
+
+             email: profile.emails[0].value,
+          });
+
+          await newuser.save();
+
+          console.log("newuser", newuser);
+
+          cb(null, newuser);
+        }
+
+        cb(null, user);
+      } catch (error) {
+        console.log(error);
+      }
       done(null, profile);
     }
   )
@@ -140,10 +142,8 @@ passport.deserializeUser((user, done) => {
   done(null, user);
 });
 
-
 app.use("/", Route);
 app.use("/auth", passportRoute);
-
 
 const MONGOURL = process.env.MONGOURL;
 

@@ -40,7 +40,7 @@ router.get(
   })
 );
 
-router.get("/github", passport.authenticate("github", { scope: ["profile"] }));
+router.get("/github", passport.authenticate("github", { scope: ["profile",'user:email'] }));
 
 router.get(
   "/github/callback",
