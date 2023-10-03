@@ -9,6 +9,8 @@ const router = express.Router();
 const CLIENT_URL = process.env.CLIENT_URL;
 
 router.get("/login/success", (req, res) => {
+
+  console.log(req.user);
     if (req.user) {
       res.status(200).json({
         success: true,
@@ -26,7 +28,7 @@ router.get("/login/success", (req, res) => {
     });
   });
 
-  router.get("/google", passport.authenticate("google", { scope: ["profile"] }));
+  router.get("/google", passport.authenticate("google", { scope: ["profile","email"] }));
 
   router.get(
     "/google/callback",
@@ -35,5 +37,15 @@ router.get("/login/success", (req, res) => {
       failureRedirect: "/login/failed",
     })
   );
+
+  router.get("/github", passport.authenticate("github", { scope: ["profile"] }));
+
+router.get(
+  "/github/callback",
+  passport.authenticate("github", {
+    successRedirect: `${CLIENT_URL}/dashboard`,
+    failureRedirect: "/login/failed",
+  })
+);
 
   export default router;

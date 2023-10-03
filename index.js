@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 // import passportSetup from "./passport";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as GithubStrategy } from "passport-github2";
 import session from "express-session";
 // import authRoute from "./routes/auth";
 import Route from "./src/routes/routes.js";
@@ -55,24 +56,81 @@ passport.use(
       clientSecret: GOOGLE_CLIENT_SECRET,
       callbackURL: `${SERVER_URL}/auth/google/callback`,
     },
-    function (accessToken, refreshToken, profile, done) {
-      done(null, profile);
+   async function (accessToken, refreshToken, profile, cb) {
+
+      try {
+       const  user =  await User.findOne({ googleId: profile.id });
+
+        if(!user){
+         const newuser=new User({
+            googleId: profile.id,
+            firstName: profile.name.givenName,
+            lastName: profile.name.familyName,
+      
+            email: profile.emails[0].value,
+            
+          });
+
+          await newuser.save();
+
+          console.log("newuser",newuser);
+
+          cb(null,newuser);
+        }
+
+        cb(null,user)
+      }
+       catch (error) {
+        console.log(error);
+        
+      }
+     
     }
   )
 );
 
-// passport.use(
-//   new GithubStrategy(
-//     {
-//       clientID: GITHUB_CLIENT_ID,
-//       clientSecret: GITHUB_CLIENT_SECRET,
-//       callbackURL: "/auth/github/callback",
-//     },
-//     function (accessToken, refreshToken, profile, done) {
-//       done(null, profile);
-//     }
-//   )
-// );
+const GITHUB_CLIENT_ID=process.env.GITHUB_CLIENT_ID;
+const GITHUB_CLIENT_SECRET=process.env.GITHUB_CLIENT_SECRET;
+
+passport.use(
+  new GithubStrategy(
+    {
+      clientID: GITHUB_CLIENT_ID,
+      clientSecret: GITHUB_CLIENT_SECRET,
+      callbackURL: `${SERVER_URL}/auth/google/callback`,
+    },
+    async function (accessToken, refreshToken, profile, done) {
+
+      // try {
+      //   const  user =  await User.findOne({ githubId: profile.id });
+ 
+      //    if(!user){
+      //     const newuser=new User({
+      //       githubId: profile.id,
+      //        firstName: profile.name.givenName,
+      //        lastName: profile.name.familyName,
+       
+      //       //  email: profile.emails[0].value,
+             
+      //      });
+ 
+      //      await newuser.save();
+ 
+      //      console.log("newuser",newuser);
+ 
+      //      cb(null,newuser);
+      //    }
+ 
+      //    cb(null,user)
+      //  }
+      //   catch (error) {
+      //    console.log(error);
+         
+      //  }
+      done(null, profile);
+    }
+  )
+);
 
 passport.serializeUser((user, done) => {
   done(null, user);
